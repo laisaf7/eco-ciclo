@@ -65,6 +65,16 @@ data class EntregaQr(
     val moedas: BigDecimal,
 )
 
+data class Artigo(
+    val id: Long,
+    val titulo: String,
+    val material: String,
+    val conteudo: String,
+    val autor: String,
+    val dataCriacao: String,
+)
+data class ArtigoRequest(val titulo: String, val material: String, val conteudo: String)
+
 data class ApiErro(val message: String?, val detalhes: List<String>?)
 
 interface EcoApi {
@@ -85,6 +95,12 @@ interface EcoApi {
 
     @GET("api/comercios")
     suspend fun comercios(): List<Comercio>
+
+    @GET("api/artigos")
+    suspend fun artigos(): List<Artigo>
+
+    @POST("api/artigos")
+    suspend fun publicarArtigo(@Body request: ArtigoRequest): Artigo
 
     @POST("api/entregas-qr")
     suspend fun gerarQr(@Body request: EntregaQrRequest): EntregaQr

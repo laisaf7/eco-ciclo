@@ -9,6 +9,8 @@ import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ecociclo.app.data.ApiErro
+import com.ecociclo.app.data.Artigo
+import com.ecociclo.app.data.ArtigoRequest
 import com.ecociclo.app.data.Carteira
 import com.ecociclo.app.data.Comercio
 import com.ecociclo.app.data.EntregaQr
@@ -38,6 +40,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var pontos by mutableStateOf<List<Ponto>>(emptyList())
         private set
     var comercios by mutableStateOf<List<Comercio>>(emptyList())
+        private set
+    var artigos by mutableStateOf<List<Artigo>>(emptyList())
         private set
     var carregando by mutableStateOf(false)
         private set
@@ -88,6 +92,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         carteira = api.carteira()
         pontos = api.pontos()
         comercios = api.comercios()
+        artigos = api.artigos()
     }
 
     fun carregar() = executar { buscarDados() }
@@ -109,6 +114,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         carteira = null
         pontos = emptyList()
         comercios = emptyList()
+        artigos = emptyList()
         resgate = null
         pagamento = null
         qrGerado = null
@@ -123,6 +129,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun pagar(comercio: Comercio, valor: BigDecimal, tipo: String) = executar {
         pagamento = api.pagar(PagamentoRequest(comercio.id, valor, tipo))
         carteira = api.carteira()
+    }
+
+    fun publicarArtigo(titulo: String, material: String, conteudo: String, onSucesso: () -> Unit) = executar {
+        val novo = api.publicarArtigo(ArtigoRequest(titulo.trim(), material, conteudo.trim()))
+        artigos = listOf(novo) + artigos
+        onSucesso()
     }
 
     fun gerarQr(ponto: Ponto, kg: BigDecimal) = executar {

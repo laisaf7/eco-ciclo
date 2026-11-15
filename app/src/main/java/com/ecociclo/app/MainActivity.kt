@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ecociclo.app.ui.EcoTema
+import com.ecociclo.app.ui.IdeiasScreen
 import com.ecociclo.app.ui.InicioScreen
 import com.ecociclo.app.ui.LoginScreen
 import com.ecociclo.app.ui.MapaScreen
@@ -46,7 +48,7 @@ import com.ecociclo.app.ui.OperadorScreen
 import com.ecociclo.app.ui.ValidarScreen
 
 private enum class Aba(val rotulo: String) {
-    INICIO("Início"), MAPA("Mapa"), VALIDAR("Validar"), LOJAS("Lojas"), OPERADOR("Operador")
+    INICIO("Início"), MAPA("Mapa"), VALIDAR("Validar"), LOJAS("Lojas"), IDEIAS("Ideias"), OPERADOR("Operador")
 }
 
 class MainActivity : ComponentActivity() {
@@ -115,6 +117,7 @@ private fun Principal(vm: AppViewModel) {
                 Aba.MAPA -> MapaScreen(vm)
                 Aba.VALIDAR -> ValidarScreen(vm)
                 Aba.LOJAS -> MarketplaceScreen(vm)
+                Aba.IDEIAS -> IdeiasScreen(vm)
                 Aba.OPERADOR -> OperadorScreen(vm)
             }
         }
@@ -129,5 +132,6 @@ private fun iconeDe(aba: Aba): Painter = when (aba) {
     Aba.MAPA -> rememberVectorPainter(Icons.Default.Place)
     Aba.VALIDAR -> painterResource(R.drawable.ic_qr)
     Aba.LOJAS -> rememberVectorPainter(Icons.Default.ShoppingCart)
+    Aba.IDEIAS -> rememberVectorPainter(Icons.Default.Favorite)
     Aba.OPERADOR -> rememberVectorPainter(Icons.Default.Build)
 }
