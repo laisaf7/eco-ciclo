@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.data.Artigo
 
 // Mesma lista validada pela API em ArtigoRequest
 private val MATERIAIS = listOf("Plástico", "Papel", "Vidro", "Metal", "Tecido", "Madeira", "Outros")
@@ -55,6 +56,8 @@ fun IdeiasScreen(vm: AppViewModel) {
     var material by rememberSaveable { mutableStateOf<String?>(null) }
     var aberto by rememberSaveable { mutableStateOf<Long?>(null) }
     var novo by rememberSaveable { mutableStateOf(false) }
+    var editandoId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var excluindoId by rememberSaveable { mutableStateOf<Long?>(null) }
     val lista = vm.artigos.filter { material == null || it.material == material }
 
     Box(Modifier.fillMaxSize()) {
@@ -103,6 +106,14 @@ fun IdeiasScreen(vm: AppViewModel) {
                             Text("${artigo.material} · por ${artigo.autor}", style = MaterialTheme.typography.labelLarge)
                             if (expandido) {
                                 Text(artigo.conteudo, modifier = Modifier.padding(top = 8.dp))
+                                if (artigo.autor == vm.sessao?.username) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(onClick = { editandoId = artigo.id }) { Text("Editar") }
+                                        TextButton(onClick = { excluindoId = artigo.id }) {
+                                            Text("Excluir", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    }
+                                }
                             } else {
                                 Text(artigo.conteudo, maxLines = 2, style = MaterialTheme.typography.bodySmall)
                                 Text("Toque para ler o passo a passo", style = MaterialTheme.typography.labelSmall)
@@ -120,25 +131,52 @@ fun IdeiasScreen(vm: AppViewModel) {
         )
     }
 
-    if (novo) DialogoNovoArtigo(vm, materialInicial = material, onFechar = { novo = false })
+    if (novo) DialogoArtigo(vm, editando = null, materialInicial = material, onFechar = { novo = false })
+    vm.artigos.find { it.id == editandoId }?.let {
+        DialogoArtigo(vm, editando = it, materialInicial = it.material, onFechar = { editandoId = null })
+    }
+    vm.artigos.find { it.id == excluindoId }?.let { artigo ->
+        AlertDialog(
+            onDismissRequest = { excluindoId = null },
+            title = { Text("Excluir ideia?") },
+            text = { Text("\"${artigo.titulo}\" será apagada para todos. Isso não pode ser desfeito.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        vm.excluirArtigo(artigo.id)
+                        excluindoId = null
+                    },
+                    enabled = !vm.carregando,
+                ) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { excluindoId = null }) { Text("Cancelar") } },
+        )
+    }
 }
 
+/** Publica uma ideia nova (editando = null) ou edita uma existente. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DialogoNovoArtigo(vm: AppViewModel, materialInicial: String?, onFechar: () -> Unit) {
-    var titulo by rememberSaveable { mutableStateOf("") }
+private fun DialogoArtigo(vm: AppViewModel, editando: Artigo?, materialInicial: String?, onFechar: () -> Unit) {
+    var titulo by rememberSaveable { mutableStateOf(editando?.titulo.orEmpty()) }
     var material by rememberSaveable { mutableStateOf(materialInicial) }
-    var conteudo by rememberSaveable { mutableStateOf("") }
+    var conteudo by rememberSaveable { mutableStateOf(editando?.conteudo.orEmpty()) }
     var foto by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var removerFoto by rememberSaveable { mutableStateOf(false) }
     // Seletor de fotos do sistema: não pede permissão de acesso à galeria
     val escolherFoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) foto = uri
+        if (uri != null) {
+            foto = uri
+            removerFoto = false
+        }
     }
+    // Foto nova escolhida agora, ou a que o artigo já tinha (se não foi removida)
+    val previa: Any? = foto ?: editando?.takeIf { it.temImagem && !removerFoto }?.urlImagem
     val valido = titulo.isNotBlank() && material != null && conteudo.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onFechar,
-        title = { Text("Nova ideia") },
+        title = { Text(if (editando == null) "Nova ideia" else "Editar ideia") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -162,11 +200,11 @@ private fun DialogoNovoArtigo(vm: AppViewModel, materialInicial: String?, onFech
                     placeholder = { Text("1. Corte...\n2. Costure...") },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
                 )
-                foto?.let {
+                previa?.let {
                     AsyncImage(
                         model = it,
                         imageLoader = vm.imagens,
-                        contentDescription = "Foto escolhida",
+                        contentDescription = "Foto da ideia",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxWidth().height(160.dp),
                     )
@@ -174,16 +212,23 @@ private fun DialogoNovoArtigo(vm: AppViewModel, materialInicial: String?, onFech
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = {
                         escolherFoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    }) { Text(if (foto == null) "Adicionar foto" else "Trocar foto") }
-                    if (foto != null) TextButton(onClick = { foto = null }) { Text("Remover") }
+                    }) { Text(if (previa == null) "Adicionar foto" else "Trocar foto") }
+                    if (previa != null) {
+                        TextButton(onClick = {
+                            foto = null
+                            removerFoto = true
+                        }) { Text("Remover") }
+                    }
                 }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { vm.publicarArtigo(titulo, material!!, conteudo, foto, onSucesso = onFechar) },
+                onClick = {
+                    vm.salvarArtigo(editando?.id, titulo, material!!, conteudo, foto, removerFoto, onSucesso = onFechar)
+                },
                 enabled = valido && !vm.carregando,
-            ) { Text("Publicar") }
+            ) { Text(if (editando == null) "Publicar" else "Salvar") }
         },
         dismissButton = { TextButton(onClick = onFechar) { Text("Cancelar") } },
     )

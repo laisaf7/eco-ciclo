@@ -5,8 +5,11 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 import java.math.BigDecimal
 
 data class LoginRequest(val username: String, val password: String)
@@ -72,11 +75,19 @@ data class Artigo(
     val conteudo: String,
     val autor: String,
     val dataCriacao: String,
+    val dataAtualizacao: String?,
     val temImagem: Boolean,
 ) {
-    val urlImagem get() = "${BuildConfig.API_URL}api/artigos/$id/imagem"
+    // ?v= muda a cada edição, para o Coil não mostrar a foto antiga guardada em cache
+    val urlImagem get() = "${BuildConfig.API_URL}api/artigos/$id/imagem?v=${(dataAtualizacao ?: dataCriacao).hashCode()}"
 }
-data class ArtigoRequest(val titulo: String, val material: String, val conteudo: String, val imagemBase64: String?)
+data class ArtigoRequest(
+    val titulo: String,
+    val material: String,
+    val conteudo: String,
+    val imagemBase64: String?,
+    val removerImagem: Boolean = false,
+)
 
 data class ApiErro(val message: String?, val detalhes: List<String>?)
 
@@ -104,6 +115,12 @@ interface EcoApi {
 
     @POST("api/artigos")
     suspend fun publicarArtigo(@Body request: ArtigoRequest): Artigo
+
+    @PUT("api/artigos/{id}")
+    suspend fun editarArtigo(@Path("id") id: Long, @Body request: ArtigoRequest): Artigo
+
+    @DELETE("api/artigos/{id}")
+    suspend fun excluirArtigo(@Path("id") id: Long)
 
     @POST("api/entregas-qr")
     suspend fun gerarQr(@Body request: EntregaQrRequest): EntregaQr

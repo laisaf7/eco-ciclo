@@ -145,15 +145,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         carteira = api.carteira()
     }
 
-    fun publicarArtigo(titulo: String, material: String, conteudo: String, foto: Uri?, onSucesso: () -> Unit) = executar {
+    /** id nulo publica um artigo novo; com id, edita (só o autor, a API confere). */
+    fun salvarArtigo(
+        id: Long?, titulo: String, material: String, conteudo: String,
+        foto: Uri?, removerFoto: Boolean, onSucesso: () -> Unit,
+    ) = executar {
         val base64 = foto?.let { jpegBase64(it) }
         if (foto != null && base64 == null) {
             erro = "Não foi possível ler a foto escolhida."
             return@executar
         }
-        val novo = api.publicarArtigo(ArtigoRequest(titulo.trim(), material, conteudo.trim(), base64))
-        artigos = listOf(novo) + artigos
+        val pedido = ArtigoRequest(titulo.trim(), material, conteudo.trim(), base64, removerFoto)
+        if (id == null) {
+            artigos = listOf(api.publicarArtigo(pedido)) + artigos
+        } else {
+            val editado = api.editarArtigo(id, pedido)
+            artigos = artigos.map { if (it.id == id) editado else it }
+        }
         onSucesso()
+    }
+
+    fun excluirArtigo(id: Long) = executar {
+        api.excluirArtigo(id)
+        artigos = artigos.filterNot { it.id == id }
     }
 
     // O Coil já reduz para caber em 1280 px e corrige a rotação da câmera (EXIF); a API aceita até 1 MB
