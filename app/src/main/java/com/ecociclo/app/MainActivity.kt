@@ -67,7 +67,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Principal(vm: AppViewModel) {
     var aba by rememberSaveable { mutableAba() }
-    val abas = Aba.entries.filter { it != Aba.OPERADOR || vm.sessao?.role == "ADMIN" }
+    val admin = vm.sessao?.role == "ADMIN"
+    // Operador só para admin; Ideias só para usuário comum
+    val abas = Aba.entries.filter { if (admin) it != Aba.IDEIAS else it != Aba.OPERADOR }
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(vm.erro) {
