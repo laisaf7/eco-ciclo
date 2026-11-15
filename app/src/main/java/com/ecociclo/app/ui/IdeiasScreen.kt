@@ -1,5 +1,14 @@
 package com.ecociclo.app.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,6 +89,15 @@ fun IdeiasScreen(vm: AppViewModel) {
                                 aberto = if (expandido) null else artigo.id
                             },
                     ) {
+                        if (artigo.temImagem) {
+                            AsyncImage(
+                                model = artigo.urlImagem,
+                                imageLoader = vm.imagens,
+                                contentDescription = "Foto: ${artigo.titulo}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth().height(if (expandido) 240.dp else 160.dp),
+                            )
+                        }
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(artigo.titulo, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Text("${artigo.material} · por ${artigo.autor}", style = MaterialTheme.typography.labelLarge)
@@ -111,6 +129,11 @@ private fun DialogoNovoArtigo(vm: AppViewModel, materialInicial: String?, onFech
     var titulo by rememberSaveable { mutableStateOf("") }
     var material by rememberSaveable { mutableStateOf(materialInicial) }
     var conteudo by rememberSaveable { mutableStateOf("") }
+    var foto by rememberSaveable { mutableStateOf<Uri?>(null) }
+    // Seletor de fotos do sistema: não pede permissão de acesso à galeria
+    val escolherFoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) foto = uri
+    }
     val valido = titulo.isNotBlank() && material != null && conteudo.isNotBlank()
 
     AlertDialog(
@@ -139,11 +162,26 @@ private fun DialogoNovoArtigo(vm: AppViewModel, materialInicial: String?, onFech
                     placeholder = { Text("1. Corte...\n2. Costure...") },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 160.dp),
                 )
+                foto?.let {
+                    AsyncImage(
+                        model = it,
+                        imageLoader = vm.imagens,
+                        contentDescription = "Foto escolhida",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxWidth().height(160.dp),
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        escolherFoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }) { Text(if (foto == null) "Adicionar foto" else "Trocar foto") }
+                    if (foto != null) TextButton(onClick = { foto = null }) { Text("Remover") }
+                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { vm.publicarArtigo(titulo, material!!, conteudo, onSucesso = onFechar) },
+                onClick = { vm.publicarArtigo(titulo, material!!, conteudo, foto, onSucesso = onFechar) },
                 enabled = valido && !vm.carregando,
             ) { Text("Publicar") }
         },

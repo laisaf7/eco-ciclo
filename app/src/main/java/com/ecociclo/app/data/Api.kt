@@ -72,8 +72,11 @@ data class Artigo(
     val conteudo: String,
     val autor: String,
     val dataCriacao: String,
-)
-data class ArtigoRequest(val titulo: String, val material: String, val conteudo: String)
+    val temImagem: Boolean,
+) {
+    val urlImagem get() = "${BuildConfig.API_URL}api/artigos/$id/imagem"
+}
+data class ArtigoRequest(val titulo: String, val material: String, val conteudo: String, val imagemBase64: String?)
 
 data class ApiErro(val message: String?, val detalhes: List<String>?)
 
@@ -106,8 +109,9 @@ interface EcoApi {
     suspend fun gerarQr(@Body request: EntregaQrRequest): EntregaQr
 }
 
-fun criarApi(token: () -> String?): EcoApi {
-    val cliente = OkHttpClient.Builder()
+/** Cliente HTTP com o token; também usado pelo Coil para baixar as fotos protegidas. */
+fun criarCliente(token: () -> String?): OkHttpClient =
+    OkHttpClient.Builder()
         .addInterceptor { chain ->
             val pedido = chain.request().newBuilder()
             token()?.let { pedido.header("Authorization", "Bearer $it") }
@@ -116,10 +120,11 @@ fun criarApi(token: () -> String?): EcoApi {
         // O servidor grátis (Render) "acorda" em até ~60 s após ficar parado
         .readTimeout(90, java.util.concurrent.TimeUnit.SECONDS)
         .build()
-    return Retrofit.Builder()
+
+fun criarApi(cliente: OkHttpClient): EcoApi =
+    Retrofit.Builder()
         .baseUrl(BuildConfig.API_URL)
         .client(cliente)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(EcoApi::class.java)
-}

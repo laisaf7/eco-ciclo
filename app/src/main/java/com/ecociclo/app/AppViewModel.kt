@@ -2,6 +2,15 @@ package com.ecociclo.app
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.util.Base64
+import coil.ImageLoader
+import coil.request.ImageRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,6 +32,7 @@ import com.ecociclo.app.data.ResgateRequest
 import com.ecociclo.app.data.Sessao
 import com.ecociclo.app.data.Transacao
 import com.ecociclo.app.data.criarApi
+import com.ecociclo.app.data.criarCliente
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -31,7 +41,11 @@ import java.math.BigDecimal
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val prefs = app.getSharedPreferences("sessao", Context.MODE_PRIVATE)
-    private val api = criarApi { sessao?.token }
+    private val cliente = criarCliente { sessao?.token }
+    private val api = criarApi(cliente)
+
+    /** Coil com o mesmo cliente HTTP, porque a rota das fotos exige login. */
+    val imagens = ImageLoader.Builder(app).okHttpClient(cliente).build()
 
     var sessao by mutableStateOf(sessaoSalva())
         private set
@@ -131,10 +145,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         carteira = api.carteira()
     }
 
-    fun publicarArtigo(titulo: String, material: String, conteudo: String, onSucesso: () -> Unit) = executar {
-        val novo = api.publicarArtigo(ArtigoRequest(titulo.trim(), material, conteudo.trim()))
+    fun publicarArtigo(titulo: String, material: String, conteudo: String, foto: Uri?, onSucesso: () -> Unit) = executar {
+        val base64 = foto?.let { jpegBase64(it) }
+        if (foto != null && base64 == null) {
+            erro = "Não foi possível ler a foto escolhida."
+            return@executar
+        }
+        val novo = api.publicarArtigo(ArtigoRequest(titulo.trim(), material, conteudo.trim(), base64))
         artigos = listOf(novo) + artigos
         onSucesso()
+    }
+
+    // O Coil já reduz para caber em 1280 px e corrige a rotação da câmera (EXIF); a API aceita até 1 MB
+    private suspend fun jpegBase64(foto: Uri): String? {
+        val pedido = ImageRequest.Builder(getApplication()).data(foto).size(1280).allowHardware(false).build()
+        val bitmap = (imagens.execute(pedido).drawable as? BitmapDrawable)?.bitmap ?: return null
+        return withContext(Dispatchers.Default) {
+            val saida = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, saida)
+            Base64.encodeToString(saida.toByteArray(), Base64.NO_WRAP)
+        }
     }
 
     fun gerarQr(ponto: Ponto, kg: BigDecimal) = executar {

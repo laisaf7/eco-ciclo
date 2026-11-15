@@ -53,4 +53,5 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 }
