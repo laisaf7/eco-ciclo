@@ -14,7 +14,10 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -102,5 +105,43 @@ fun OperadorScreen(vm: AppViewModel) {
             )
             SelectionContainer { Text(qr.codigo, style = MaterialTheme.typography.bodyMedium) }
         }
+
+        ModerarIdeias(vm)
+    }
+}
+
+/** Admin não vê a aba Ideias, então modera (exclui qualquer artigo) por aqui. */
+@Composable
+private fun ModerarIdeias(vm: AppViewModel) {
+    var excluindoId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    Text("Moderar ideias", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+    if (vm.artigos.isEmpty()) Text("Nenhuma ideia publicada.")
+    vm.artigos.forEach { artigo ->
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(artigo.titulo, fontWeight = FontWeight.Bold)
+                Text("${artigo.material} · por ${artigo.autor}", style = MaterialTheme.typography.bodySmall)
+            }
+            TextButton(onClick = { excluindoId = artigo.id }, enabled = !vm.carregando) {
+                Text("Excluir", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+
+    vm.artigos.find { it.id == excluindoId }?.let { artigo ->
+        AlertDialog(
+            onDismissRequest = { excluindoId = null },
+            title = { Text("Excluir ideia?") },
+            text = { Text("\"${artigo.titulo}\", de ${artigo.autor}, será apagada para todos. Isso não pode ser desfeito.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.excluirArtigo(artigo.id)
+                    excluindoId = null
+                }) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = { TextButton(onClick = { excluindoId = null }) { Text("Cancelar") } },
+        )
     }
 }
