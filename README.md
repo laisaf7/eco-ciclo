@@ -25,8 +25,36 @@ primeira tela demorar até 1 minuto, é o servidor ligando; depois fica rápido.
 | 2. Ler o QR ou digitar o código | `usuario` / `user123` | Aba Validar |
 | 3. Ver saldo e kg | `usuario` | Aba Início |
 | 4. Gerar voucher ou transferir | `usuario` | Aba Lojas |
+| 5. Ler e publicar ideias de reaproveitamento | `usuario` | Aba Ideias |
+| 6. Excluir qualquer ideia (moderação) | `admin` | Aba Operador, seção "Moderar ideias" |
 
 Coordenadas dos ecopontos, moedas por kg e comércios são dados de demonstração (`V4__ecociclo.sql` na API).
+
+## Aba Ideias
+
+Artigos que ensinam a transformar material reciclável em outro produto (ex.: bolsa
+com calça jeans velha, horta vertical com garrafa PET).
+
+- **Filtro por material:** Plástico, Papel, Vidro, Metal, Tecido, Madeira e Outros.
+- **Ler:** o card mostra a foto e o começo do texto; ao tocar, abre o passo a passo.
+- **Publicar:** botão "Publicar ideia", com título, material, passo a passo e foto opcional.
+- **Editar e excluir:** aparecem só nos artigos de quem está logado.
+- **Moderação:** o `admin` não vê a aba Ideias; ele exclui qualquer artigo pela aba Operador.
+
+Os 6 artigos de exemplo vêm da API (`V5` e `V6`), com fotos de licença livre e o
+crédito no fim do texto.
+
+**Detalhes técnicos:**
+
+| Onde | O quê |
+|---|---|
+| `ui/IdeiasScreen.kt` | Lista, filtro e a janela que publica ou edita |
+| `ui/OperadorScreen.kt` | Seção "Moderar ideias" do admin |
+| `AppViewModel.kt` | `salvarArtigo` (publica ou edita), `excluirArtigo` e a compressão da foto |
+| Fotos | [Coil](https://coil-kt.github.io/coil/) com o mesmo cliente HTTP da API, porque a rota da foto exige o token |
+| Escolher foto | Seletor de fotos do Android (`PickVisualMedia`), que não pede permissão de galeria |
+| Enviar foto | O Coil reduz para até 1280 px e corrige a rotação da câmera; o app envia JPEG 80% em Base64 (a API aceita até 1 MB) |
+| Cache | A URL da foto leva `?v=` com a data da última edição, para não mostrar a foto antiga depois de trocar |
 
 ## Rodar localmente
 
