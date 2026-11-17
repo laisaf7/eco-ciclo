@@ -55,6 +55,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ecociclo.app.AppViewModel
 import com.ecociclo.app.R
+import com.ecociclo.app.data.INCENTIVO_ATELIE
 import com.ecociclo.app.data.Ponto
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -120,7 +121,7 @@ fun MapaScreen(vm: AppViewModel) {
                         Text(ponto.nome, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(listOfNotNull(ponto.endereco, ponto.bairro).joinToString(" · "))
                         val distancia = distanciaMetros(local, ponto)?.let { " · ${textoDistancia(it)}" }.orEmpty()
-                        if (ponto.artesao) Text("Ateliê de artesão", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+                        if (ponto.artesao) Text("Ateliê de artesão · +$INCENTIVO_ATELIE% EcoMoedas", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
                         Text("Aceita ${ponto.nomeTipoResiduo} · ${textoStatus(ponto.status)}$distancia")
                         OutlinedButton(onClick = {
                             context.startActivity(
@@ -182,7 +183,7 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
                 Marker(mapa).apply {
                     position = GeoPoint(ponto.latitude!!, ponto.longitude!!)
                     title = ponto.nome
-                    snippet = (if (ponto.artesao) "Ateliê de artesão · " else "") + "Aceita ${ponto.nomeTipoResiduo}"
+                    snippet = (if (ponto.artesao) "Ateliê de artesão · +$INCENTIVO_ATELIE% EcoMoedas · " else "") + "Aceita ${ponto.nomeTipoResiduo}"
                     icon = if (ponto.artesao) iconeAtelie else iconeEcoponto
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 },

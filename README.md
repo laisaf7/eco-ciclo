@@ -71,6 +71,9 @@ Incentiva quem cria e vende produtos feitos com material reciclado.
 - **Produtos:** preço em reais (vitrine) e, opcional, em EcoMoedas. Com preço em
   EcoMoedas, qualquer pessoa compra pelo app e recebe um código de retirada; as moedas
   vão para o saldo do artesão.
+- **Incentivo para entregar no ateliê:** a entrega rende +50% de EcoMoedas e um cupom de
+  50% de desconto em um produto daquele ateliê (um cupom por entrega). O artesão pesa só a
+  parte reciclável que vai usar.
 
 **Detalhes técnicos:**
 

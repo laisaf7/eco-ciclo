@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.data.INCENTIVO_ATELIE
 import com.ecociclo.app.data.Produto
 
 /** Aba do artesão: o ponto de coleta do ateliê, o QR das entregas e os produtos à venda. */
@@ -65,7 +66,10 @@ fun AtelieScreen(vm: AppViewModel) {
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text("Registrar entrega", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("Pese o material, gere o QR e peça para a pessoa ler na aba Validar.")
+        Text(
+            "Pese só a parte reciclável que você vai usar, gere o QR e peça para a pessoa ler na aba Validar. " +
+                "Ela ganha +$INCENTIVO_ATELIE% de EcoMoedas e um cupom de $INCENTIVO_ATELIE% em um produto seu.",
+        )
         PesagemQr(vm, atelie)
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))

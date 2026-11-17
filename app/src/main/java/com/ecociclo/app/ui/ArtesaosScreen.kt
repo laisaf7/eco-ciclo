@@ -43,8 +43,10 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ecociclo.app.AppViewModel
 import com.ecociclo.app.data.CadastroArtesaoRequest
+import com.ecociclo.app.data.INCENTIVO_ATELIE
 import com.ecociclo.app.data.Produto
 import java.math.BigDecimal
+import java.math.RoundingMode
 
 /** Aba Lojas: comércios do bairro e produtos dos artesãos. */
 @Composable
@@ -64,13 +66,17 @@ private fun ArtesaosScreen(vm: AppViewModel) {
     var aberto by rememberSaveable { mutableStateOf<Long?>(null) }
     var comprandoId by rememberSaveable { mutableStateOf<Long?>(null) }
     var cadastrando by rememberSaveable { mutableStateOf(false) }
+    val cupons = vm.carteira?.ateliesComDesconto.orEmpty()
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("Produtos feitos com material reciclado. Os ateliês também recebem o material que usam.")
+            Text(
+                "Produtos feitos com material reciclado. Entregue material num ateliê e ganhe +$INCENTIVO_ATELIE% de " +
+                    "EcoMoedas e um cupom de $INCENTIVO_ATELIE% em um produto de lá.",
+            )
         }
         if (vm.sessao?.role == "USER") {
             item {
@@ -104,12 +110,20 @@ private fun ArtesaosScreen(vm: AppViewModel) {
                         listOfNotNull(produto.nomeAtelie, produto.bairro).joinToString(" · "),
                         style = MaterialTheme.typography.labelLarge,
                     )
+                    val comCupom = produto.idPontoColeta in cupons && produto.precoMoedas != null
                     Text(textoPreco(produto), fontWeight = FontWeight.Bold)
+                    if (comCupom) {
+                        Text(
+                            "Seu cupom: ${comDesconto(produto.precoMoedas!!).formatado()} EcoMoedas",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                     if (expandido) {
                         produto.descricao?.let { Text(it, modifier = Modifier.padding(top = 8.dp)) }
                         produto.endereco?.let { Text("Retirada: $it", style = MaterialTheme.typography.bodySmall) }
                         Text(
-                            "Este ateliê recebe ${produto.material}: entregue lá e ganhe EcoMoedas.",
+                            "Este ateliê recebe ${produto.material}: entregue lá e ganhe +$INCENTIVO_ATELIE% de EcoMoedas e um cupom.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         when {
@@ -120,7 +134,10 @@ private fun ArtesaosScreen(vm: AppViewModel) {
                                     onClick = { comprandoId = produto.id },
                                     enabled = !vm.carregando,
                                     modifier = Modifier.fillMaxWidth(),
-                                ) { Text("Comprar com ${produto.precoMoedas.formatado()} EcoMoedas") }
+                                ) {
+                                    val valor = if (comCupom) comDesconto(produto.precoMoedas) else produto.precoMoedas
+                                    Text("Comprar com ${valor.formatado()} EcoMoedas")
+                                }
                             else ->
                                 Text("Compra em reais, direto no ateliê.", style = MaterialTheme.typography.bodySmall)
                         }
@@ -132,12 +149,16 @@ private fun ArtesaosScreen(vm: AppViewModel) {
 
     vm.produtos.find { it.id == comprandoId }?.let { produto ->
         val saldo = vm.carteira?.saldo ?: BigDecimal.ZERO
+        val temCupom = produto.idPontoColeta in cupons
+        val valor = if (temCupom) comDesconto(produto.precoMoedas!!) else produto.precoMoedas!!
         AlertDialog(
             onDismissRequest = { comprandoId = null },
             title = { Text("Comprar ${produto.nome}?") },
             text = {
                 Text(
-                    "Serão debitadas ${produto.precoMoedas!!.formatado()} EcoMoedas (saldo: ${saldo.formatado()}). " +
+                    "Serão debitadas ${valor.formatado()} EcoMoedas" +
+                        (if (temCupom) " com seu cupom de $INCENTIVO_ATELIE%" else "") +
+                        " (saldo: ${saldo.formatado()}). " +
                         "Você recebe um código para retirar em ${produto.nomeAtelie}.",
                 )
             },
@@ -174,6 +195,10 @@ private fun ArtesaosScreen(vm: AppViewModel) {
 
     if (cadastrando) DialogoVirarArtesao(vm, onFechar = { cadastrando = false })
 }
+
+/** Preço em EcoMoedas com o cupom de quem entregou no ateliê (a API faz a mesma conta). */
+private fun comDesconto(preco: BigDecimal): BigDecimal =
+    preco.multiply(BigDecimal(100 - INCENTIVO_ATELIE)).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
 
 private fun textoPreco(p: Produto): String =
     "R$ ${p.precoReais.formatado()}" + (p.precoMoedas?.let { " ou ${it.formatado()} EcoMoedas" } ?: "")

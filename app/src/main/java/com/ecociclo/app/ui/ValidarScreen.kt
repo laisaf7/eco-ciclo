@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.data.INCENTIVO_ATELIE
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
@@ -87,6 +88,9 @@ fun ValidarScreen(vm: AppViewModel) {
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                         )
+                        if (r.descontoAtelie) {
+                            Text("Inclui +$INCENTIVO_ATELIE% por entregar num ateliê. Você também ganhou um cupom de $INCENTIVO_ATELIE% em um produto de ${r.nomePontoColeta} (Lojas › Artesãos).")
+                        }
                     } else {
                         Text(
                             "Resíduo no ponto errado: nenhuma moeda creditada.",

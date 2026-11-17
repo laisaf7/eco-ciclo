@@ -24,7 +24,16 @@ data class Transacao(
     val dataTransacao: String,
 )
 
-data class Carteira(val saldo: BigDecimal, val kgDesviados: BigDecimal, val transacoes: List<Transacao>)
+// Mesmo valor de ArtesaoService.INCENTIVO_PERCENTUAL na API: +50% de moedas no ateliê e cupom de 50% nos produtos de lá
+const val INCENTIVO_ATELIE = 50
+
+data class Carteira(
+    val saldo: BigDecimal,
+    val kgDesviados: BigDecimal,
+    val transacoes: List<Transacao>,
+    // Ids dos ateliês onde a pessoa tem cupom (entregou material e ainda não usou)
+    val ateliesComDesconto: List<Long>?,
+)
 
 data class Ponto(
     val id: Long,
@@ -61,6 +70,8 @@ data class Resgate(
     val descarteCorreto: Boolean,
     val moedasCreditadas: BigDecimal,
     val saldo: BigDecimal,
+    // true = entrega em ateliê: rendeu bônus e cupom de desconto nos produtos de lá
+    val descontoAtelie: Boolean,
 )
 
 data class PagamentoRequest(val idComercio: Long, val valor: BigDecimal, val tipo: String)
