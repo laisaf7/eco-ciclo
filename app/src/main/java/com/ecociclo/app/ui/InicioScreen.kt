@@ -97,7 +97,7 @@ fun InicioScreen(vm: AppViewModel, onValidar: () -> Unit) {
 
 @Composable
 private fun LinhaTransacao(t: Transacao) {
-    val credito = t.tipo == "CREDITO"
+    val credito = t.tipo == "CREDITO" || t.tipo == "VENDA"
     Column(Modifier.semantics(mergeDescendants = true) {}) {
         Row(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),

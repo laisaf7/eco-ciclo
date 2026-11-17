@@ -20,6 +20,7 @@ import androidx.lifecycle.viewModelScope
 import com.ecociclo.app.data.ApiErro
 import com.ecociclo.app.data.Artigo
 import com.ecociclo.app.data.ArtigoRequest
+import com.ecociclo.app.data.CadastroArtesaoRequest
 import com.ecociclo.app.data.Carteira
 import com.ecociclo.app.data.Comercio
 import com.ecociclo.app.data.EntregaQr
@@ -27,6 +28,8 @@ import com.ecociclo.app.data.EntregaQrRequest
 import com.ecociclo.app.data.LoginRequest
 import com.ecociclo.app.data.PagamentoRequest
 import com.ecociclo.app.data.Ponto
+import com.ecociclo.app.data.Produto
+import com.ecociclo.app.data.ProdutoRequest
 import com.ecociclo.app.data.Resgate
 import com.ecociclo.app.data.ResgateRequest
 import com.ecociclo.app.data.Sessao
@@ -57,6 +60,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var artigos by mutableStateOf<List<Artigo>>(emptyList())
         private set
+    var produtos by mutableStateOf<List<Produto>>(emptyList())
+        private set
+    // Só para o artesão: o ponto de coleta do próprio ateliê
+    var meuAtelie by mutableStateOf<Ponto?>(null)
+        private set
+    var compra by mutableStateOf<Transacao?>(null)
     var carregando by mutableStateOf(false)
         private set
     var erro by mutableStateOf<String?>(null)
@@ -107,19 +116,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         pontos = api.pontos()
         comercios = api.comercios()
         artigos = api.artigos()
+        produtos = api.produtos()
+        meuAtelie = if (sessao?.role == "ARTESAO") api.meuAtelie() else null
     }
 
     fun carregar() = executar { buscarDados() }
 
     fun entrar(usuario: String, senha: String) = executar {
-        val nova = api.login(LoginRequest(usuario.trim(), senha))
+        guardarSessao(api.login(LoginRequest(usuario.trim(), senha)))
+        buscarDados()
+    }
+
+    private fun guardarSessao(nova: Sessao) {
         prefs.edit {
             putString("token", nova.token)
             putString("username", nova.username)
             putString("role", nova.role)
         }
         sessao = nova
-        buscarDados()
     }
 
     fun sair() {
@@ -129,6 +143,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         pontos = emptyList()
         comercios = emptyList()
         artigos = emptyList()
+        produtos = emptyList()
+        meuAtelie = null
+        compra = null
         resgate = null
         pagamento = null
         qrGerado = null
@@ -181,8 +198,49 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Usuário comum vira artesão; a API devolve a sessão nova (papel ARTESAO), sem pedir login de novo. */
+    fun virarArtesao(pedido: CadastroArtesaoRequest, onSucesso: () -> Unit) = executar {
+        guardarSessao(api.virarArtesao(pedido))
+        buscarDados()
+        onSucesso()
+    }
+
+    fun esvaziarAtelie() = executar {
+        meuAtelie = api.esvaziarAtelie()
+    }
+
+    /** id nulo publica um produto novo; com id, edita (só o artesão dono, a API confere). */
+    fun salvarProduto(
+        id: Long?, nome: String, descricao: String, precoReais: BigDecimal, precoMoedas: BigDecimal?,
+        foto: Uri?, removerFoto: Boolean, onSucesso: () -> Unit,
+    ) = executar {
+        val base64 = foto?.let { jpegBase64(it) }
+        if (foto != null && base64 == null) {
+            erro = "Não foi possível ler a foto escolhida."
+            return@executar
+        }
+        val pedido = ProdutoRequest(nome.trim(), descricao.trim().ifBlank { null }, precoReais, precoMoedas, base64, removerFoto)
+        if (id == null) {
+            produtos = listOf(api.publicarProduto(pedido)) + produtos
+        } else {
+            val editado = api.editarProduto(id, pedido)
+            produtos = produtos.map { if (it.id == id) editado else it }
+        }
+        onSucesso()
+    }
+
+    fun excluirProduto(id: Long) = executar {
+        api.excluirProduto(id)
+        produtos = produtos.filterNot { it.id == id }
+    }
+
+    fun comprar(produto: Produto) = executar {
+        compra = null
+        compra = api.comprar(produto.id)
+        carteira = api.carteira()
+    }
+
     fun gerarQr(ponto: Ponto, kg: BigDecimal) = executar {
         qrGerado = null
-        qrGerado = api.gerarQr(EntregaQrRequest(ponto.id, ponto.idTipoResiduo, kg))
-    }
+        qrGerado = api.gerarQr(EntregaQrRequest(ponto.id, ponto.idTipoResiduo, kg))    }
 }

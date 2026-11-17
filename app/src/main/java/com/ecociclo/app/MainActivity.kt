@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,17 +39,18 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ecociclo.app.ui.AtelieScreen
 import com.ecociclo.app.ui.EcoTema
 import com.ecociclo.app.ui.IdeiasScreen
 import com.ecociclo.app.ui.InicioScreen
 import com.ecociclo.app.ui.LoginScreen
 import com.ecociclo.app.ui.MapaScreen
-import com.ecociclo.app.ui.MarketplaceScreen
+import com.ecociclo.app.ui.LojasScreen
 import com.ecociclo.app.ui.OperadorScreen
 import com.ecociclo.app.ui.ValidarScreen
 
 private enum class Aba(val rotulo: String) {
-    INICIO("Início"), MAPA("Mapa"), VALIDAR("Validar"), LOJAS("Lojas"), IDEIAS("Ideias"), OPERADOR("Operador")
+    INICIO("Início"), MAPA("Mapa"), VALIDAR("Validar"), LOJAS("Lojas"), IDEIAS("Ideias"), ATELIE("Ateliê"), OPERADOR("Operador")
 }
 
 class MainActivity : ComponentActivity() {
@@ -67,9 +69,16 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Principal(vm: AppViewModel) {
     var aba by rememberSaveable { mutableAba() }
-    val admin = vm.sessao?.role == "ADMIN"
-    // Operador só para admin; Ideias só para usuário comum
-    val abas = Aba.entries.filter { if (admin) it != Aba.IDEIAS else it != Aba.OPERADOR }
+    val papel = vm.sessao?.role
+    // Operador só para admin (que não vê Ideias); Ateliê só para artesão
+    val abas = Aba.entries.filter {
+        when (it) {
+            Aba.IDEIAS -> papel != "ADMIN"
+            Aba.OPERADOR -> papel == "ADMIN"
+            Aba.ATELIE -> papel == "ARTESAO"
+            else -> true
+        }
+    }
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(vm.erro) {
@@ -118,8 +127,9 @@ private fun Principal(vm: AppViewModel) {
                 Aba.INICIO -> InicioScreen(vm, onValidar = { aba = Aba.VALIDAR })
                 Aba.MAPA -> MapaScreen(vm)
                 Aba.VALIDAR -> ValidarScreen(vm)
-                Aba.LOJAS -> MarketplaceScreen(vm)
+                Aba.LOJAS -> LojasScreen(vm)
                 Aba.IDEIAS -> IdeiasScreen(vm)
+                Aba.ATELIE -> AtelieScreen(vm)
                 Aba.OPERADOR -> OperadorScreen(vm)
             }
         }
@@ -135,5 +145,6 @@ private fun iconeDe(aba: Aba): Painter = when (aba) {
     Aba.VALIDAR -> painterResource(R.drawable.ic_qr)
     Aba.LOJAS -> rememberVectorPainter(Icons.Default.ShoppingCart)
     Aba.IDEIAS -> rememberVectorPainter(Icons.Default.Favorite)
+    Aba.ATELIE -> rememberVectorPainter(Icons.Default.Star)
     Aba.OPERADOR -> rememberVectorPainter(Icons.Default.Build)
 }

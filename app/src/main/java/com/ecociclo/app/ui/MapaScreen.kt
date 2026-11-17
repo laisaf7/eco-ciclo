@@ -49,7 +49,7 @@ import java.io.File
 
 // shortcut: usa a última localização conhecida do aparelho; trocar por atualização ativa se ela vier vazia com frequência
 @SuppressLint("MissingPermission")
-private fun ultimaLocalizacao(context: Context): Location? {
+internal fun ultimaLocalizacao(context: Context): Location? {
     val gerente = context.getSystemService(LocationManager::class.java)
     return gerente.getProviders(true).mapNotNull { gerente.getLastKnownLocation(it) }.maxByOrNull { it.time }
 }
@@ -104,6 +104,7 @@ fun MapaScreen(vm: AppViewModel) {
                         Text(ponto.nome, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(listOfNotNull(ponto.endereco, ponto.bairro).joinToString(" · "))
                         val distancia = distanciaMetros(local, ponto)?.let { " · ${textoDistancia(it)}" }.orEmpty()
+                        if (ponto.artesao) Text("Ateliê de artesão", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
                         Text("Aceita ${ponto.nomeTipoResiduo} · ${textoStatus(ponto.status)}$distancia")
                         OutlinedButton(onClick = {
                             context.startActivity(
@@ -160,7 +161,9 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
                 Marker(mapa).apply {
                     position = GeoPoint(ponto.latitude!!, ponto.longitude!!)
                     title = ponto.nome
-                    snippet = "Aceita ${ponto.nomeTipoResiduo}"
+                    snippet = (if (ponto.artesao) "Ateliê de artesão · " else "") + "Aceita ${ponto.nomeTipoResiduo}"
+                    // Ateliê com o marcador em outra cor, para diferenciar dos ecopontos
+                    if (ponto.artesao) icon = icon.mutate().apply { setTint(android.graphics.Color.rgb(0xC0, 0x6A, 0x1E)) }
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                 },
             )

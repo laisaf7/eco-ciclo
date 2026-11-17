@@ -27,7 +27,8 @@ primeira tela demorar até 1 minuto, é o servidor ligando; depois fica rápido.
 | 4. Gerar voucher ou transferir | `usuario` | Aba Lojas |
 | 5. Ler e publicar ideias de reaproveitamento | `usuario` | Aba Ideias |
 | 6. Excluir qualquer ideia (moderação) | `admin` | Aba Operador, seção "Moderar ideias" |
-
+| 7. Gerar o QR de uma entrega no ateliê | `artesao` / `artesao123` | Aba Ateliê |
+| 8. Ler o QR e comprar um produto com EcoMoedas | `usuario` | Abas Validar e Lojas › Artesãos |
 Coordenadas dos ecopontos, moedas por kg e comércios são dados de demonstração (`V4__ecociclo.sql` na API).
 
 ## Aba Ideias
@@ -55,6 +56,31 @@ crédito no fim do texto.
 | Escolher foto | Seletor de fotos do Android (`PickVisualMedia`), que não pede permissão de galeria |
 | Enviar foto | O Coil reduz para até 1280 px e corrige a rotação da câmera; o app envia JPEG 80% em Base64 (a API aceita até 1 MB) |
 | Cache | A URL da foto leva `?v=` com a data da última edição, para não mostrar a foto antiga depois de trocar |
+
+## Perfil Artesão
+
+Incentiva quem cria e vende produtos feitos com material reciclado.
+
+- **Virar artesão:** em Lojas › Artesãos, o usuário escolhe o material que recebe, a
+  capacidade (até 100 kg; ecopontos têm centenas), endereço e localização. A conta
+  passa a ser de artesão na hora, sem novo login. Não teste isso com a conta pública
+  `usuario`: a troca é permanente e muda o roteiro para quem vier depois.
+- **Ateliê = ponto de coleta pequeno:** aparece no mapa com marcador laranja e o texto
+  "Ateliê de artesão". Na aba Ateliê, o artesão gera o QR das entregas (só no próprio
+  ateliê) e toca em "esvaziar" quando usa o material.
+- **Produtos:** preço em reais (vitrine) e, opcional, em EcoMoedas. Com preço em
+  EcoMoedas, qualquer pessoa compra pelo app e recebe um código de retirada; as moedas
+  vão para o saldo do artesão.
+
+**Detalhes técnicos:**
+
+| Onde | O quê |
+|---|---|
+| `ui/ArtesaosScreen.kt` | Aba Lojas com as abas Comércios e Artesãos, catálogo, compra e cadastro de artesão |
+| `ui/AtelieScreen.kt` | Ocupação do ateliê, QR das entregas e os produtos do artesão |
+| `ui/OperadorScreen.kt` | `PesagemQr`, usado pelo admin e pelo artesão |
+| `AppViewModel.kt` | `virarArtesao`, `esvaziarAtelie`, `salvarProduto`, `excluirProduto`, `comprar` |
+| API | `V8__artesao.sql`, `ArtesaoService` e `ProdutoService` |
 
 ## Rodar localmente
 

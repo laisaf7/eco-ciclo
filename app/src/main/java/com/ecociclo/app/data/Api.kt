@@ -37,6 +37,11 @@ data class Ponto(
     val longitude: Double?,
     val status: String,
     val ativo: Boolean,
+    val capacidadeKg: BigDecimal = BigDecimal.ZERO,
+    val quantidadeAtualKg: BigDecimal = BigDecimal.ZERO,
+    val percentualOcupacao: BigDecimal = BigDecimal.ZERO,
+    // true = ateliê de artesão (ponto pequeno, até 100 kg)
+    val artesao: Boolean = false,
 )
 
 data class Comercio(
@@ -89,6 +94,45 @@ data class ArtigoRequest(
     val removerImagem: Boolean = false,
 )
 
+/** Mesmo corpo de PontoColetaRequest na API; a capacidade do ateliê vai até 100 kg. */
+data class CadastroArtesaoRequest(
+    val idTipoResiduo: Long,
+    val nome: String,
+    val capacidadeKg: BigDecimal,
+    val endereco: String?,
+    val bairro: String?,
+    val latitude: Double?,
+    val longitude: Double?,
+)
+
+data class Produto(
+    val id: Long,
+    val nome: String,
+    val descricao: String?,
+    val precoReais: BigDecimal,
+    // nulo = vendido só em reais, direto com o artesão
+    val precoMoedas: BigDecimal?,
+    val idPontoColeta: Long,
+    val nomeAtelie: String,
+    val bairro: String?,
+    val endereco: String?,
+    val material: String,
+    val artesao: String,
+    val dataCriacao: String,
+    val dataAtualizacao: String?,
+    val temImagem: Boolean,
+) {
+    val urlImagem get() = "${BuildConfig.API_URL}api/produtos/$id/imagem?v=${(dataAtualizacao ?: dataCriacao).hashCode()}"
+}
+data class ProdutoRequest(
+    val nome: String,
+    val descricao: String?,
+    val precoReais: BigDecimal,
+    val precoMoedas: BigDecimal?,
+    val imagemBase64: String?,
+    val removerImagem: Boolean = false,
+)
+
 data class ApiErro(val message: String?, val detalhes: List<String>?)
 
 interface EcoApi {
@@ -124,6 +168,30 @@ interface EcoApi {
 
     @POST("api/entregas-qr")
     suspend fun gerarQr(@Body request: EntregaQrRequest): EntregaQr
+
+    @POST("api/artesao")
+    suspend fun virarArtesao(@Body request: CadastroArtesaoRequest): Sessao
+
+    @GET("api/artesao/atelie")
+    suspend fun meuAtelie(): Ponto
+
+    @POST("api/artesao/atelie/esvaziar")
+    suspend fun esvaziarAtelie(): Ponto
+
+    @GET("api/produtos")
+    suspend fun produtos(): List<Produto>
+
+    @POST("api/produtos")
+    suspend fun publicarProduto(@Body request: ProdutoRequest): Produto
+
+    @PUT("api/produtos/{id}")
+    suspend fun editarProduto(@Path("id") id: Long, @Body request: ProdutoRequest): Produto
+
+    @DELETE("api/produtos/{id}")
+    suspend fun excluirProduto(@Path("id") id: Long)
+
+    @POST("api/produtos/{id}/compras")
+    suspend fun comprar(@Path("id") id: Long): Transacao
 }
 
 /** Cliente HTTP com o token; também usado pelo Coil para baixar as fotos protegidas. */

@@ -37,15 +37,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.data.Ponto
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
 
 @Composable
 fun OperadorScreen(vm: AppViewModel) {
     var idPonto by rememberSaveable { mutableStateOf<Long?>(null) }
-    var kgTexto by rememberSaveable { mutableStateOf("") }
     val ponto = vm.pontos.firstOrNull { it.id == idPonto }
-    val kg = lerValor(kgTexto)
 
     Column(
         Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
@@ -54,7 +53,8 @@ fun OperadorScreen(vm: AppViewModel) {
         Text("Registrar pesagem", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text("Escolha o ecoponto", style = MaterialTheme.typography.titleMedium)
         Column(Modifier.selectableGroup()) {
-            vm.pontos.filter { it.ativo }.forEach { item ->
+            // Ateliês de artesão geram o próprio QR na aba Ateliê
+            vm.pontos.filter { it.ativo && !it.artesao }.forEach { item ->
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -70,6 +70,19 @@ fun OperadorScreen(vm: AppViewModel) {
                 }
             }
         }
+        PesagemQr(vm, ponto)
+
+        ModerarIdeias(vm)
+    }
+}
+
+/** Peso + botão + QR da entrega. Usado pelo admin (ecopontos) e pelo artesão (próprio ateliê). */
+@Composable
+fun PesagemQr(vm: AppViewModel, ponto: Ponto?) {
+    var kgTexto by rememberSaveable { mutableStateOf("") }
+    val kg = lerValor(kgTexto)
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         OutlinedTextField(
             value = kgTexto,
             onValueChange = { kgTexto = it },
@@ -105,8 +118,6 @@ fun OperadorScreen(vm: AppViewModel) {
             )
             SelectionContainer { Text(qr.codigo, style = MaterialTheme.typography.bodyMedium) }
         }
-
-        ModerarIdeias(vm)
     }
 }
 
