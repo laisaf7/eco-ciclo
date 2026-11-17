@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,16 +31,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.inset
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.R
 import com.ecociclo.app.data.Ponto
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -138,6 +154,11 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
         }
     }
 
+    // Ecoponto: círculo verde com reciclagem; ateliê de artesão: laranja com flor
+    // Ícones copiados do Material Icons do SDK (res/drawable), sem o pacote estendido inteiro
+    val iconeEcoponto = iconeMarcador(ImageVector.vectorResource(R.drawable.ic_recycling), MaterialTheme.colorScheme.primary)
+    val iconeAtelie = iconeMarcador(ImageVector.vectorResource(R.drawable.ic_local_florist), Color(0xFFC06A1E))
+
     val ciclo = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(ciclo) {
         val observador = LifecycleEventObserver { _, evento ->
@@ -162,9 +183,8 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
                     position = GeoPoint(ponto.latitude!!, ponto.longitude!!)
                     title = ponto.nome
                     snippet = (if (ponto.artesao) "Ateliê de artesão · " else "") + "Aceita ${ponto.nomeTipoResiduo}"
-                    // Ateliê com o marcador em outra cor, para diferenciar dos ecopontos
-                    if (ponto.artesao) icon = icon.mutate().apply { setTint(android.graphics.Color.rgb(0xC0, 0x6A, 0x1E)) }
-                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = if (ponto.artesao) iconeAtelie else iconeEcoponto
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 },
             )
         }
@@ -178,4 +198,24 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
             contentDescription = "Mapa com ${pontos.size} ecopontos. A mesma lista está abaixo."
         },
     )
+}
+
+/** Desenha o ícone do Material dentro de um círculo colorido, como Drawable para o marcador do osmdroid. */
+@Composable
+private fun iconeMarcador(icone: ImageVector, cor: Color): Drawable {
+    val pintor = rememberVectorPainter(icone)
+    val densidade = LocalDensity.current
+    val context = LocalContext.current
+    return remember(icone, cor, densidade) {
+        val lado = with(densidade) { 36.dp.toPx() }
+        val bitmap = ImageBitmap(lado.toInt(), lado.toInt())
+        CanvasDrawScope().draw(densidade, LayoutDirection.Ltr, Canvas(bitmap), Size(lado, lado)) {
+            drawCircle(Color.White)
+            drawCircle(cor, radius = size.minDimension / 2 - 2.dp.toPx())
+            inset(size.minDimension * 0.22f) {
+                with(pintor) { draw(size, colorFilter = ColorFilter.tint(Color.White)) }
+            }
+        }
+        BitmapDrawable(context.resources, bitmap.asAndroidBitmap())
+    }
 }
