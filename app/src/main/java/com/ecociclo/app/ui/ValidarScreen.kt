@@ -56,6 +56,12 @@ fun ValidarScreen(vm: AppViewModel) {
             enabled = !vm.carregando,
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Abrir câmera") }
+        // Mesmo código de teste do protótipo web; a API trata ECO-4821 como entrega de demonstração
+        OutlinedButton(
+            onClick = { vm.resgatar("ECO-4821") },
+            enabled = !vm.carregando,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Simular leitura do QR Code") }
 
         Text("Ou digite o código", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(
@@ -70,6 +76,10 @@ fun ValidarScreen(vm: AppViewModel) {
             enabled = !vm.carregando && codigo.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Validar código") }
+        Text(
+            "Códigos de teste: ECO-4821 (plástico), ECO-7310 (metal), ATL-0550 (ateliê).",
+            style = MaterialTheme.typography.bodySmall,
+        )
 
         vm.resgate?.let { r ->
             Card(
