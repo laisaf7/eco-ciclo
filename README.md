@@ -8,6 +8,9 @@ App em Kotlin com Jetpack Compose. O backend é a
 [gestao-residuos-api](https://github.com/laisaf7/gestao-residuos-api)
 (Spring Boot + PostgreSQL), hospedada no Render com o banco no Neon.
 
+- **Protótipo navegável (web):** [eco-ciclo-web](https://github.com/laisaf7/eco-ciclo-web), a mesma jornada no navegador, sem instalar nada.
+- **Documentação técnica:** [`docs/DOCUMENTACAO.md`](docs/DOCUMENTACAO.md) (arquitetura, telas, dados e configuração).
+
 ## Testar no celular
 
 1. Baixe o **[EcoCiclo.apk](https://github.com/laisaf7/eco-ciclo/releases/latest/download/EcoCiclo.apk)** no celular Android.
@@ -21,15 +24,40 @@ primeira tela demorar até 1 minuto, é o servidor ligando; depois fica rápido.
 
 | Passo | Conta | Onde |
 |---|---|---|
-| 1. Gerar o QR da pesagem | `admin` / `admin123` | Aba Operador |
-| 2. Ler o QR ou digitar o código | `usuario` / `user123` | Aba Validar |
+| 1. Gerar o QR da pesagem (ou pular e usar um código de teste) | `admin` / `admin123` | Aba Operador |
+| 2. Ler o QR, digitar o código ou tocar em "Simular leitura do QR Code" | `usuario` / `user123` | Aba Validar |
 | 3. Ver saldo e kg | `usuario` | Aba Início |
 | 4. Gerar voucher ou transferir | `usuario` | Aba Lojas |
 | 5. Ler e publicar ideias de reaproveitamento | `usuario` | Aba Ideias |
 | 6. Excluir qualquer ideia (moderação) | `admin` | Aba Operador, seção "Moderar ideias" |
 | 7. Gerar o QR de uma entrega no ateliê | `artesao` / `artesao123` | Aba Ateliê |
 | 8. Ler o QR e comprar um produto com EcoMoedas | `usuario` | Abas Validar e Lojas › Artesãos |
+
 Coordenadas dos ecopontos, moedas por kg e comércios são dados de demonstração (`V4__ecociclo.sql` na API).
+
+### Códigos de teste
+
+Os mesmos do protótipo web. Valem em qualquer conta, quantas vezes quiser (`V11__codigos_demo.sql` na API).
+
+| Código | Entrega |
+|---|---|
+| `ECO-4821` | 3 kg de plástico (+15 EcoMoedas). É o que o botão "Simular leitura do QR Code" usa |
+| `ECO-7310` | 1,2 kg de metal (+9,6 EcoMoedas) |
+| `ATL-0550` | 2 kg no ateliê de artesão (+50% de EcoMoedas e cupom de 50% num produto) |
+
+Digite em maiúsculas. As contas `admin`, `usuario` e `artesao` já começam com saldo,
+kg e histórico de exemplo, diferentes em cada conta (`V10__historico_demo.sql`).
+
+## Início, Mapa e Validar
+
+- **Início:** saldo (amarelo), impacto em kg (verde), o card "Entregou seus recicláveis?"
+  com os botões Validar entrega e Achar ecoponto, e as últimas movimentações, da mais
+  recente para a mais antiga. Saídas (vouchers, transferências, compras) aparecem em vermelho.
+- **Mapa:** estilo MapTiler Streets com os créditos na tela. Cada card mostra o material
+  aceito, quantas EcoMoedas vale o kg, o status e a distância, com os botões
+  "Vou entregar aqui" (abre a aba Validar) e "Como chegar" (abre o Google Maps).
+- **Validar:** câmera para ler o QR, "Simular leitura do QR Code" para demonstrar sem um
+  QR impresso e o campo para digitar o código.
 
 ## Aba Ideias
 
@@ -90,7 +118,10 @@ Incentiva quem cria e vende produtos feitos com material reciclado.
 1. Na pasta da API, defina `JWT_SECRET` no `.env` e rode `docker compose up --build -d`.
 2. Em `gradle.properties`, troque `ecociclo.apiUrl` para `http://10.0.2.2:8080/` (emulador)
    ou para `http://localhost:8080/` (celular via USB, depois de `adb reverse tcp:8080 tcp:8080`).
-3. Abra esta pasta no Android Studio e execute.
+3. Opcional: para o mapa do MapTiler, crie uma chave grátis em [cloud.maptiler.com](https://cloud.maptiler.com)
+   e adicione `maptiler.key=SUA_CHAVE` ao `local.properties` (fica fora do git). Sem a chave,
+   o app usa o mapa padrão do OpenStreetMap.
+4. Abra esta pasta no Android Studio e execute.
 
 ## Hospedagem (novembro de 2026)
 
@@ -104,4 +135,5 @@ momento, sem um PC ligado rodando a API.
 - Em `data/Api.kt`, o tempo de espera de resposta é 90 s (o padrão do OkHttp é
   10 s), porque o Render leva cerca de 50 s para religar a API.
 - A senha do `admin` é pública de propósito, para quem testa conseguir seguir o roteiro.
-- APK: `.\gradlew assembleDebug` gera `app/build/outputs/apk/debug/app-debug.apk`.
+- APK: `.\gradlew assembleDebug` gera `app/build/outputs/apk/debug/app-debug.apk`. Gere o APK
+  numa máquina com `maptiler.key` no `local.properties`, senão o mapa do APK sai no estilo padrão.
