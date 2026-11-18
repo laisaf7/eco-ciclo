@@ -139,7 +139,8 @@ private fun LinhaTransacao(t: Transacao) {
                 (if (credito) "+" else "−") + t.valor.formatado(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (credito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                // error do Material 3 é #BA1A1A no tema claro, o mesmo vermelho do protótipo web
+                color = if (credito) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
             )
         }
         HorizontalDivider()
