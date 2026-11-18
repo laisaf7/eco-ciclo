@@ -54,13 +54,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ecociclo.app.AppViewModel
+import com.ecociclo.app.BuildConfig
 import com.ecociclo.app.R
 import com.ecociclo.app.data.INCENTIVO_ATELIE
 import com.ecociclo.app.data.Ponto
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import java.io.File
 
@@ -149,7 +152,15 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
             osmdroidTileCache = File(context.cacheDir, "tiles")
         }
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            // MapTiler Streets: grátis até 100 mil tiles/mês com chave; sem chave cai no mapa padrão do OSM
+            setTileSource(
+                if (BuildConfig.MAPTILER_KEY.isBlank()) TileSourceFactory.MAPNIK
+                else XYTileSource(
+                    "MapTilerStreets", 0, 20, 256, ".png?key=${BuildConfig.MAPTILER_KEY}",
+                    arrayOf("https://api.maptiler.com/maps/streets-v2/256/"),
+                    "© MapTiler © OpenStreetMap contributors",
+                ),
+            )
             setMultiTouchControls(true)
             controller.setZoom(14.0)
         }
@@ -178,6 +189,7 @@ private fun MapaOsm(pontos: List<Ponto>, modifier: Modifier) {
 
     LaunchedEffect(pontos) {
         mapa.overlays.clear()
+        mapa.overlays.add(CopyrightOverlay(context))
         pontos.forEach { ponto ->
             mapa.overlays.add(
                 Marker(mapa).apply {

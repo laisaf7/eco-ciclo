@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -15,6 +17,11 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "API_URL", "\"${property("ecociclo.apiUrl")}\"")
+        // Chave do MapTiler fica no local.properties (fora do git); vazia = mapa padrão do OSM
+        val local = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+        }
+        buildConfigField("String", "MAPTILER_KEY", "\"${local.getProperty("maptiler.key", "")}\"")
     }
 
     buildTypes {
