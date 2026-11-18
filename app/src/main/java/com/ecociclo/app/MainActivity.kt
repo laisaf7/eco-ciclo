@@ -125,7 +125,7 @@ private fun Principal(vm: AppViewModel) {
             if (vm.carregando) LinearProgressIndicator(Modifier.fillMaxWidth())
             when (aba) {
                 Aba.INICIO -> InicioScreen(vm, onValidar = { aba = Aba.VALIDAR }, onMapa = { aba = Aba.MAPA })
-                Aba.MAPA -> MapaScreen(vm)
+                Aba.MAPA -> MapaScreen(vm, onEntregar = { aba = Aba.VALIDAR })
                 Aba.VALIDAR -> ValidarScreen(vm)
                 Aba.LOJAS -> LojasScreen(vm)
                 Aba.IDEIAS -> IdeiasScreen(vm)

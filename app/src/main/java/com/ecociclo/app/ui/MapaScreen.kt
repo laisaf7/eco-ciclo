@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -93,7 +94,7 @@ private fun textoStatus(status: String) = when (status) {
 }
 
 @Composable
-fun MapaScreen(vm: AppViewModel) {
+fun MapaScreen(vm: AppViewModel, onEntregar: () -> Unit) {
     val context = LocalContext.current
     var local by remember { mutableStateOf<Location?>(null) }
     val pedirPermissao = rememberLauncherForActivityResult(
@@ -125,8 +126,10 @@ fun MapaScreen(vm: AppViewModel) {
                         Text(listOfNotNull(ponto.endereco, ponto.bairro).joinToString(" · "))
                         val distancia = distanciaMetros(local, ponto)?.let { " · ${textoDistancia(it)}" }.orEmpty()
                         if (ponto.artesao) Text("Ateliê de artesão · +$INCENTIVO_ATELIE% EcoMoedas", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
-                        Text("Aceita ${ponto.nomeTipoResiduo} · ${textoStatus(ponto.status)}$distancia")
-                        OutlinedButton(onClick = {
+                        val valor = ponto.moedasPorKg?.let { " · ${it.formatado()} EcoMoedas por kg" }.orEmpty()
+                        Text("Aceita ${ponto.nomeTipoResiduo}$valor · ${textoStatus(ponto.status)}$distancia")
+                        Button(onClick = onEntregar, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Vou entregar aqui") }
+                        OutlinedButton(modifier = Modifier.fillMaxWidth(), onClick = {
                             context.startActivity(
                                 Intent(
                                     Intent.ACTION_VIEW,

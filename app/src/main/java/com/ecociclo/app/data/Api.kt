@@ -39,6 +39,8 @@ data class Ponto(
     val id: Long,
     val idTipoResiduo: Long,
     val nomeTipoResiduo: String,
+    // null enquanto a API publicada não manda o campo; aí o mapa só não mostra o valor
+    val moedasPorKg: BigDecimal? = null,
     val nome: String,
     val endereco: String?,
     val bairro: String?,
