@@ -8,7 +8,8 @@ App em Kotlin com Jetpack Compose. O backend é a
 [gestao-residuos-api](https://github.com/laisaf7/gestao-residuos-api)
 (Spring Boot + PostgreSQL), hospedada no Render com o banco no Neon.
 
-- **Protótipo navegável (web):** [eco-ciclo-web](https://github.com/laisaf7/eco-ciclo-web), a mesma jornada no navegador, sem instalar nada.
+- **Protótipo navegável (web):** https://eco-ciclo-web.vercel.app/, a mesma jornada no navegador, sem instalar nada
+  (código em [eco-ciclo-web](https://github.com/laisaf7/eco-ciclo-web)).
 - **Documentação técnica:** [`docs/DOCUMENTACAO.md`](docs/DOCUMENTACAO.md) (arquitetura, telas, dados e configuração).
 
 ## Testar no celular
